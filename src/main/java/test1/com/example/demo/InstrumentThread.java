@@ -16,7 +16,7 @@ public class InstrumentThread extends Thread{
     String symbol = "";
     static String MARKET_DATA_URL = "https://cis2017-exchange.herokuapp.com/api/market_data";
     static Boolean counter = false;
-    static double price = 0.0;
+    static int price = 0;
 
 
     static double first = 0.0;
@@ -79,57 +79,57 @@ public class InstrumentThread extends Thread{
                     if(element.getAsk()!=0) {
 
 
-//                        if (window==0) {
-//                            first = element.getAsk();
-//                            window ++;
-//                        }
-//                        else {
-//
-//                            if (window>14){
-//                                avgplus = plus/window;
-//                                avgminus = minus/window;
-//                            }
-//
-//
-//
-//
-//                            current = element.getAsk();
-//                            if(current>first){
-//                                plus = plus + (current-first);
-//                                currentgain = current-first;
-//                                currentloss = 0;
-//                            }
-//                            else{
-//                                minus = minus + (first-current);
-//                                currentgain = 0;
-//                                currentloss = first-current;
-//                            }
-//
-//                            first = current;
-//                            window ++;
-//
-//                            System.out.println("-----Window: "+ window);
-//
-//                            if (window==14){
-//                                firstRs = plus/minus ;
-//                                rsi = 100- 100/(1+firstRs);
-//
+                        if (window==0) {
+                            first = element.getAsk();
+                            window ++;
+                        }
+                        else {
+
+                            if (window>14){
+                                avgplus = plus/window;
+                                avgminus = minus/window;
+                            }
+
+
+
+
+                            current = element.getAsk();
+                            if(current>first){
+                                plus = plus + (current-first);
+                                currentgain = current-first;
+                                currentloss = 0;
+                            }
+                            else{
+                                minus = minus + (first-current);
+                                currentgain = 0;
+                                currentloss = first-current;
+                            }
+
+                            first = current;
+                            window ++;
+
+                            System.out.println("-----Window: "+ window);
+
+                            if (window==14){
+                                firstRs = plus/minus ;
+                                rsi = 100- 100/(1+firstRs);
+
 //                                System.out.println("-----RSI: "+ rsi);
 //                                if(rsi < 20){
 //                                    //buy
 //                                }
-//
-//                            }
-//                            if (window>14){
-//
-//
-//                                top = avgplus*(window-1)+currentgain;
-//                                down = avgminus*(window-1)+currentloss;
-//
-//                                smoothRs = top/down;
-//                                nextRsi = 100-100/(1+smoothRs);
-//
-//                                System.out.println("-----RSI: "+ nextRsi);
+
+                            }
+                            if (window>14){
+
+
+                                top = avgplus*(window-1)+currentgain;
+                                down = avgminus*(window-1)+currentloss;
+
+                                smoothRs = top/down;
+                                nextRsi = 100-100/(1+smoothRs);
+
+                                System.out.println("-----RSI: "+ nextRsi);
 //                                if(nextRsi<40){
 //                                    //buy
 //
@@ -145,10 +145,9 @@ public class InstrumentThread extends Thread{
 //                                    }
 //
 //                                }
-//
-//
-//                            }
-//                        }
+
+                            }
+                        }
 
 
 
@@ -186,17 +185,19 @@ public class InstrumentThread extends Thread{
                             System.out.println(counter);
 
                             if ((totalq / q.size()) > (totalq2 / q2.size())) {
-                                //buy
-                                if (counter == false) {
-                                    double result = datas.orderService("buy");
-                                    if(result!=0.0){
-                                        System.out.println("Buyyyyyyyyy");
-                                        counter=true;
-                                        //price = element.getAsk();
-                                        price = result;
-                                        System.out.println("Successful---------");
-                                        break;
-                                    }
+                                if(nextRsi<50) {
+                                    //buy
+                                    //if (counter == false) {
+                                        int result = datas.orderService("buy");
+                                        if (result != 0) {
+                                            System.out.println("Buyyyyyyyyy");
+                                            //counter = true;
+                                            //price = element.getAsk();
+                                            price = price+result;
+                                            System.out.println("Successful---------");
+                                            break;
+                                        }
+                                    //}
                                 }
                             }
                         }
@@ -206,59 +207,64 @@ public class InstrumentThread extends Thread{
                     }
 
 //                    if (counter == true && element.getBid()>price) {
-                    if (counter == true && element.getBid()>price) {
-                        double result = datas.orderService("sell");
-                        if(result!=0.0){
-                            System.out.println("Sellllllll");
-                            counter=false;
-                            System.out.println("Successful---------");
-                        }
-                    }
+//                    if (counter == true && element.getBid()>price) {
+//                        double result = datas.orderService("sell");
+//                        if(result!=0.0){
+//                            System.out.println("Sellllllll");
+//                            counter=false;
+//                            System.out.println("Successful---------");
+//                        }
+//                    }
 
 
                     //sell
                     if(element.getBid()!=0) {
-//							if (sellq.size() == 7) {
-//								sellq.remove();
-//							}
-//							sellq.add(element.getBid());
-//							System.out.println("Small Pool ask: " + sellq.size());
-//
-//							if (sellq2.size() == 20) {
-//								sellq2.remove();
-//							}
-//							sellq2.add(element.getBid());
-//							System.out.println("Large Pool aks: " + sellq2.size());
-//
-//							if (sellq.size() == 7 && sellq2.size() == 20) {
-//								Iterator<Double> iter3 = sellq.iterator();
-//								Iterator<Double> iter4 = sellq2.iterator();
-//								double totalsellq = 0;
-//								double totalsellq2 = 0;
-//								while (iter3.hasNext()) {
-//									totalsellq = totalsellq + iter3.next();
-//								}
-//
-//								while (iter4.hasNext()) {
-//									totalsellq2 = totalsellq2 + iter4.next();
-//								}
-//
-//								System.out.println("Small average ask: " + totalsellq / sellq.size());
-//								System.out.println("Large average aks: " + totalsellq2 / sellq2.size());
-//								System.out.println(counter);
-//
-//								if ((totalsellq / sellq.size()) < (totalsellq2 / sellq2.size())) {
-//									//sell
-//									if (counter == true && element.getBid()>price) {
-//										String result = orderService("sell");
-//										if(result.equalsIgnoreCase("yes")){
-//											System.out.println("Sellllllll");
-//											counter=false;
-//											System.out.println("Successful---------");
-//										}
-//									}
-//								}
-//							}
+							if (sellq.size() == 7) {
+								sellq.remove();
+							}
+							sellq.add(element.getBid());
+							System.out.println("Small Pool ask: " + sellq.size());
+
+							if (sellq2.size() == 20) {
+								sellq2.remove();
+							}
+							sellq2.add(element.getBid());
+							System.out.println("Large Pool aks: " + sellq2.size());
+
+							if (sellq.size() == 7 && sellq2.size() == 20) {
+								Iterator<Double> iter3 = sellq.iterator();
+								Iterator<Double> iter4 = sellq2.iterator();
+								double totalsellq = 0;
+								double totalsellq2 = 0;
+								while (iter3.hasNext()) {
+									totalsellq = totalsellq + iter3.next();
+								}
+
+								while (iter4.hasNext()) {
+									totalsellq2 = totalsellq2 + iter4.next();
+								}
+
+								System.out.println("Small average ask: " + totalsellq / sellq.size());
+								System.out.println("Large average aks: " + totalsellq2 / sellq2.size());
+								System.out.println(counter);
+
+								if ((totalsellq / sellq.size()) < (totalsellq2 / sellq2.size())) {
+								    if(nextRsi>55) {
+                                        //sell
+                                        //if (counter == true && element.getBid() > price) {
+                                        if(price!=0) {
+                                            int result = datas.orderService("sell");
+                                            if (result != 0) {
+                                                System.out.println("Sellllllll");
+                                                //counter = false;
+                                                price = price-result;
+                                                System.out.println("Successful---------");
+                                            }
+                                        }
+                                        //}
+                                    }
+								}
+							}
                     }
                 }
             }

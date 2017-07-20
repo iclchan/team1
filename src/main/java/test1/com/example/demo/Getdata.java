@@ -17,13 +17,13 @@ public class Getdata {
 
 
     //make order
-    public static Double orderService(String val) {
+    public static Integer orderService(String val) {
         RestTemplate rt = new RestTemplate();
         rt.getMessageConverters().add(new MappingJackson2HttpMessageConverter());
         rt.getMessageConverters().add(new StringHttpMessageConverter());
         Order order = new Order();
         order.setTeam_uid(TEAM_UID);
-        order.setSymbol("0386");
+        order.setSymbol("3988ls");
         order.setSide(val);
         order.setPrice(1);
         order.setOrder_type("market");
@@ -35,8 +35,12 @@ public class Getdata {
         List<Fill> fills = returnOrder.getFills();
         double avgFillprice = 0.0;
         int totalamount = 0;
+        double totalprice = 0.0;
 
         for(Fill element: fills){
+            totalprice=element.getPrice()*element.getQty();
+            totalprice+=totalprice;
+
             avgFillprice+=element.getPrice();
             totalamount+=element.getQty();
         }
@@ -44,12 +48,12 @@ public class Getdata {
         System.out.println("--Avg Price----" + avgFillprice);
 
         if (filled_qty==0){
-            return 0.0;
+            return 0;
         }
 
         System.out.println("------------------" + returnOrder.toString());
 
-        return avgFillprice;
+        return filled_qty;
     }
 
 
