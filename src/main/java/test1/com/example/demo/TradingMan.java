@@ -49,7 +49,6 @@ public class TradingMan  extends Thread {
                 calculateThirtyFifthPercentile(instrument);
                 processBuy(instrument);
                 processSell(instrument);
-                System.out.println(buyCount + ", 40th Percentile : " + thirtyFifthPercentile);
                 if (buyCount > 30) {
                     if (!boughtThisTick) {
                         boolean didIBuy = decideBuy(instrument);
@@ -117,6 +116,7 @@ public class TradingMan  extends Thread {
     public boolean decideBuy(Instrument instrument) {
         if (checkSupplyDemandBuy(instrument) && stocksWorth < 200000) {
             Order returnedOrder = orderService(instrument.getSymbol(), "buy", 100, "market", 1);
+            System.out.println(returnedOrder);
             if (returnedOrder.getFilled_qty() != 0) {
                 stocksAtHand += returnedOrder.getFilled_qty();
                 boughtCount++;
@@ -188,6 +188,7 @@ public class TradingMan  extends Thread {
     public void cutLossAndSell(Instrument instrument) {
         if (instrument.getSellPrice() < (boughtPrice * 0.95)) {
             Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand, "market", instrument.getSellPrice());
+            System.out.println(returnOrder);
             stocksAtHand -= returnOrder.getFilled_qty();
             if (stocksAtHand == 0) {
                 boughtPrice = 0;
@@ -207,10 +208,12 @@ public class TradingMan  extends Thread {
             System.out.println("Selling");
             if (stocksAtHand > 100) {
                 Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand / 2, "limit", instrument.getSellPrice());
+                System.out.println(returnOrder);
                 stocksAtHand = stocksAtHand / 2;
                 stocksWorth = stocksWorth / 2;
             } else {
                 Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand, "limit", instrument.getSellPrice());
+                System.out.println(returnOrder);
                 stocksAtHand = 0;
                 stocksWorth = 0.0;
                 if (stocksAtHand == 0) {
