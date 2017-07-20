@@ -2,6 +2,7 @@ package test1.com.example.demo;
 
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -9,7 +10,7 @@ import org.springframework.web.client.RestTemplate;
 
 public class TradingMan  extends Thread {
 
-    static String TEAM_UID = "ZvFcySZQsiTY1QJc0mHJqw";
+    static String TEAM_UID = "ArOCc3HrHUJuyZVUo1JDfw";
     static String ORDER_URL = "https://cis2017-exchange.herokuapp.com/api/orders";
 
     List<Instrument> instrumentInfo = new ArrayList<Instrument>();
@@ -33,6 +34,8 @@ public class TradingMan  extends Thread {
     double profitPercent = 0.0;
 
     String symbol = "";
+
+    List<Order> orderList = new ArrayList<Order>();
 
     public TradingMan(String symbol) {
         this.symbol = symbol;
@@ -114,18 +117,23 @@ public class TradingMan  extends Thread {
     }
 
     public boolean decideBuy(Instrument instrument) {
-        if (checkSupplyDemandBuy(instrument) && stocksWorth < 200000) {
-            Order returnedOrder = orderService(instrument.getSymbol(), "buy", 100, "market", 1);
-            System.out.println(returnedOrder);
-            if (returnedOrder.getFilled_qty() != 0) {
-                stocksAtHand += returnedOrder.getFilled_qty();
-                boughtCount++;
-                double currPrice = returnedOrder.getFills().get(0).getPrice();
-                stocksWorth = stocksWorth + (returnedOrder.getFilled_qty() * currPrice);
-                if (currPrice > boughtPrice) {
-                    boughtPrice = currPrice;
+        if(instrument.getSellPrice() != 0) {
+            if (checkSupplyDemandBuy(instrument) && stocksWorth < 200000) {
+                int quantityStocks = 20000 / (int) instrument.getSellPrice();
+                Order returnedOrder = orderService(instrument.getSymbol(), "buy", quantityStocks, "market", 1);
+                if (returnedOrder.getId() != null) {
+                    System.out.println(returnedOrder);
                 }
-                return true;
+                if (returnedOrder.getFilled_qty() != 0) {
+                    stocksAtHand += returnedOrder.getFilled_qty();
+                    boughtCount++;
+                    double currPrice = returnedOrder.getFills().get(0).getPrice();
+                    stocksWorth = stocksWorth + (returnedOrder.getFilled_qty() * currPrice);
+                    if (currPrice > boughtPrice) {
+                        boughtPrice = currPrice;
+                    }
+                    return true;
+                }
             }
         }
         return false;
@@ -177,7 +185,7 @@ public class TradingMan  extends Thread {
     public boolean checkSupplyDemandSell(Instrument instrument) {
         double currSellAvg = 1.0 * instrument.getDemandVolume() / instrument.getSupplyVolume();
         //System.out.println("Sell Price : " + averageSell + "," + (averageSell * 1.03));
-        if (currSellAvg > (supplyDemandSellAverage * 1.6) || instrument.getBuyPrice() > (averageSell * profitPercent)) {
+        if (instrument.getBuyPrice() > (averageSell * profitPercent)) {
             if (instrument.getSellPrice() > (boughtPrice * 1.02)) {
                 return true;
             }
@@ -186,9 +194,11 @@ public class TradingMan  extends Thread {
     }
 
     public void cutLossAndSell(Instrument instrument) {
-        if (instrument.getSellPrice() < (boughtPrice * 0.95)) {
+        if (instrument.getSellPrice() < (boughtPrice - (boughtPrice * profitPercent))) {
             Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand, "market", instrument.getSellPrice());
-            System.out.println(returnOrder);
+            if(returnOrder.getId() != null){
+                System.out.println(returnOrder);
+            }
             stocksAtHand -= returnOrder.getFilled_qty();
             if (stocksAtHand == 0) {
                 boughtPrice = 0;
@@ -204,22 +214,57 @@ public class TradingMan  extends Thread {
     }
 
     public boolean decideSell(Instrument instrument) {
-        if (checkSupplyDemandSell(instrument) && stocksAtHand > 0) {
+        Iterator<Order> iterator = orderList.iterator();
+        RestTemplate restTemplate = new RestTemplate();
+        restTemplate.setErrorHandler(new CustomErrorHandler());
+        while(iterator.hasNext()) {
+            Order tempOrder = iterator.next();
+            try {
+                Order returnOrder = restTemplate.getForObject("https://cis2017-exchange.herokuapp.com/api/market_data/" + tempOrder.getId(), Order.class);
+                if (returnOrder == null) {
+                    iterator.remove();
+                } else if (returnOrder.getStatus().equals("FILLED")) {
+                    stocksWorth = stocksWorth * ((1.0 * stocksAtHand - returnOrder.getFilled_qty()) / stocksAtHand);
+                    stocksAtHand -= returnOrder.getFilled_qty();
+                    iterator.remove();
+                }
+            }catch(Exception ex){
+                stocksWorth = stocksWorth * ((1.0 * stocksAtHand - tempOrder.getQty()) / stocksAtHand);
+                stocksAtHand -= tempOrder.getQty();
+                iterator.remove();
+            }
+        }
+        System.out.println("Instrument : " + instrument.getSymbol() + "Quantity Left : " + stocksAtHand);
+        if(stocksAtHand == 0){
+            boughtPrice = 0;
+            boughtCount = 0;
+        }
+        if (instrument.getBuyPrice() != 0 && checkSupplyDemandSell(instrument) && stocksAtHand > 0) {
             System.out.println("Selling");
             if (stocksAtHand > 100) {
                 Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand / 2, "limit", instrument.getSellPrice());
-                System.out.println(returnOrder);
-                stocksAtHand = stocksAtHand / 2;
-                stocksWorth = stocksWorth / 2;
+                if(returnOrder.getId() != null){
+                    System.out.println(returnOrder);
+                    if(!returnOrder.getStatus().equals("FILLED")) {
+                        orderList.add(returnOrder);
+                    }
+                }
+                //stocksAtHand = stocksAtHand / 2;
+                //stocksWorth = stocksWorth / 2;
             } else {
                 Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand, "limit", instrument.getSellPrice());
-                System.out.println(returnOrder);
-                stocksAtHand = 0;
+                if(returnOrder.getId() != null){
+                    System.out.println(returnOrder);
+                    if(!returnOrder.getStatus().equals("FILLED")) {
+                        orderList.add(returnOrder);
+                    }
+                }
+                /*stocksAtHand = 0;
                 stocksWorth = 0.0;
                 if (stocksAtHand == 0) {
                     boughtPrice = 0;
                     boughtCount = 0;
-                }
+                }*/
             }
             System.out.println("Quantity Left : " + stocksAtHand);
             return true;
