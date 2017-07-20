@@ -118,7 +118,7 @@ public class TradingMan  extends Thread {
 
     public boolean decideBuy(Instrument instrument) {
         if(instrument.getSellPrice() != 0) {
-            if (checkSupplyDemandBuy(instrument) && stocksWorth < 200000) {
+            if (checkSupplyDemandBuy(instrument) && stocksWorth < 150000) {
                 int quantityStocks = 20000 / (int) instrument.getSellPrice();
                 Order returnedOrder = orderService(instrument.getSymbol(), "buy", quantityStocks, "market", 1);
                 if (returnedOrder.getId() != null) {
@@ -194,7 +194,7 @@ public class TradingMan  extends Thread {
     }
 
     public void cutLossAndSell(Instrument instrument) {
-        if (instrument.getSellPrice() < (boughtPrice - (boughtPrice * profitPercent))) {
+        if (instrument.getSellPrice() < (boughtPrice - ((boughtPrice * profitPercent) - boughtPrice))) {
             Order returnOrder = orderService(instrument.getSymbol(), "sell", stocksAtHand, "market", instrument.getSellPrice());
             if(returnOrder.getId() != null){
                 System.out.println(returnOrder);
