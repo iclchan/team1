@@ -27,6 +27,9 @@ public class InstrumentThread extends Thread{
     double totalprice=0.0;
     double limitmoney = 100000.0;
 
+    //double totalmoney = 1000000.0;
+    double currentmoney = 0.0;
+
 
     public InstrumentThread(String symbol, Integer highris, Integer lowris){
         this.symbol = symbol;
@@ -168,6 +171,8 @@ public class InstrumentThread extends Thread{
                                                 totalprice += thisfillprice;
                                             }
                                             limitmoney -= totalprice;
+                                            //totalmoney-= totalprice;
+
                                             System.out.println("You have bought $$$:" + totalprice);
                                             System.out.println("You left $$$:" + limitmoney);
 
@@ -223,7 +228,7 @@ public class InstrumentThread extends Thread{
 								    if(nextRsi>highris) {
                                         if(price!=0) {
                                             //sell decision made
-                                            Order result = datas.orderService("buy", symbol, "market", 500);
+                                            Order result = datas.orderService("buy", symbol, "market", 1000);
                                             if (result.getQty() != 0) {
                                                 System.out.println("Sold Sold Sold Sold Sold");
                                                 price = price-result.getQty();

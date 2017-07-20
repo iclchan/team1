@@ -27,20 +27,20 @@ public class DemoApplication {
 		return args -> {
 
 
-			InstrumentThread threadOne3988 = new InstrumentThread("3988",55,50);
+			InstrumentThread threadOne3988 = new InstrumentThread("3988",55,40);
 			threadOne3988.start();
 
-//			InstrumentThread threadOne0005 = new InstrumentThread("0005",55,50);
-//			threadOne0005.start();
-//
-//			InstrumentThread threadOne0386 = new InstrumentThread("0386",55,50);
-//			threadOne0386.start();
-//
-//			InstrumentThread threadOne0388 = new InstrumentThread("0388",55,50);
-//			threadOne0388.start();
-//
-//			InstrumentThread threadOne0001 = new InstrumentThread("0001",55,50);
-//			threadOne0001.start();
+			InstrumentThread threadOne0005 = new InstrumentThread("0005",55,40);
+			threadOne0005.start();
+
+			InstrumentThread threadOne0386 = new InstrumentThread("0386",55,40);
+			threadOne0386.start();
+
+			InstrumentThread threadOne0388 = new InstrumentThread("0388",55,40);
+			threadOne0388.start();
+
+			InstrumentThread threadOne0001 = new InstrumentThread("0001",55,40);
+			threadOne0001.start();
 
 
 
