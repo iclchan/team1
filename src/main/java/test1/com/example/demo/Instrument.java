@@ -11,8 +11,8 @@ import java.util.Map;
 public class Instrument {
 
     private String symbol;
-    private Map<String, Integer> buy;
-    private Map<String, Integer> sell;
+    private Map<Double, Integer> buy;
+    private Map<Double, Integer> sell;
 
     public String getSymbol() {
         return symbol;
@@ -22,19 +22,19 @@ public class Instrument {
         this.symbol = symbol;
     }
 
-    public Map<String, Integer> getBuy() {
+    public Map<Double, Integer> getBuy() {
         return buy;
     }
 
-    public void setBuy(Map<String, Integer> buy) {
+    public void setBuy(Map<Double, Integer> buy) {
         this.buy = buy;
     }
 
-    public Map<String, Integer> getSell() {
+    public Map<Double, Integer> getSell() {
         return sell;
     }
 
-    public void setSell(Map<String, Integer> sell) {
+    public void setSell(Map<Double, Integer> sell) {
         this.sell = sell;
     }
 

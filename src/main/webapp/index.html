@@ -2,14 +2,22 @@
 <html xmlns:th="http://www.thymeleaf.org">
 <head lang="en">
     <meta charset="UTF-8"/>
-    <title>ReactJS + Spring Data REST</title>
-    <link rel="stylesheet" href="/main.css" />
+    <title>Team Summary</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/1.3.4/jspdf.debug.js"></script>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/latest/css/bootstrap.min.css">
+    <link rel="stylesheet" href="/style.css" />
+    <script type="text/javascript">
+        function load()
+        {
+            setTimeout("window.open(self.location, '_self');", 50000);
+        }
+    </script>
 </head>
-<body>
+<body onload="load()">
 
 <div id="app"></div>
-
 <script src="bundle.js"></script>
+
 
 </body>
 </html>

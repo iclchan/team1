@@ -1,0 +1,24 @@
+.container#root{
+    width:100vw !important;
+}
+
+.jumbotron{
+    width: 60vw !important;
+    margin-left: auto;
+    margin-right: auto;
+    background-color: darkblue;
+}
+
+.jumbotron h2{
+    color: white;
+}
+.jumbotron p{
+    color: white;
+}
+
+.content{
+    width: 50vw !important;
+    margin-left: auto;
+    margin-right: auto;
+
+}
