@@ -1,11 +1,9 @@
 package test1.com.example.demo;
 
-import org.springframework.http.converter.StringHttpMessageConverter;
-import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.web.client.RestTemplate;
-
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Queue;
 
 /**
@@ -13,30 +11,37 @@ import java.util.Queue;
  */
 public class InstrumentThread extends Thread{
 
-    String symbol = "";
+    private String symbol = "";
+    private Integer highris;
+    private Integer lowris;
+
     static String MARKET_DATA_URL = "https://cis2017-exchange.herokuapp.com/api/market_data";
-    static Boolean counter = false;
-    static int price = 0;
 
 
-    static double first = 0.0;
-    static double current = 0.0;
-    static int window = 0;
+    boolean counter = false;
+    int price = 0;
+    double first = 0.0;
+    double current = 0.0;
+    int window = 0;
+
+    double totalprice=0.0;
+    double limitmoney = 100000.0;
 
 
-    public InstrumentThread(String symbol){
+    public InstrumentThread(String symbol, Integer highris, Integer lowris){
         this.symbol = symbol;
+        this.highris = highris;
+        this.lowris = lowris;
     }
 
     public void run(){
-//			orderService();
-        //change the <,>
-        Getdata datas = new Getdata();
-        Queue<Double> q = new LinkedList<Double>();
-        Queue<Double> q2 = new LinkedList<Double>();
 
-        Queue<Double> sellq = new LinkedList<Double>();
-        Queue<Double> sellq2 = new LinkedList<Double>();
+        Getdata datas = new Getdata();
+        Queue<Double> q = new LinkedList<>();
+        Queue<Double> q2 = new LinkedList<>();
+
+        Queue<Double> sellq = new LinkedList<>();
+        Queue<Double> sellq2 = new LinkedList<>();
 
         double plus = 0.0;
         double avgplus = 0.0;
@@ -62,36 +67,26 @@ public class InstrumentThread extends Thread{
             MarketData[]  m1 = restTemplate.getForObject(MARKET_DATA_URL, MarketData[].class);
 
             for (MarketData element: m1){
-                System.out.println(element.toString());
-                Market market = new Market(element.getSymbol(),element.getTime(),element.getBid(),element.getAsk());
-                //marketRepository.save(market);
-
-                //System.out.println("1111111111111111 ");
 
                 if (element.getSymbol().equalsIgnoreCase(symbol)) {
 
-
-                    //System.out.println("22222222222222 ");
-
+                    System.out.println("===================================");
+                    System.out.println(element.toString());
 
 
                     //buy
                     if(element.getAsk()!=0) {
 
-
+                        //calculate RSI
                         if (window==0) {
                             first = element.getAsk();
                             window ++;
                         }
                         else {
-
                             if (window>14){
                                 avgplus = plus/window;
                                 avgminus = minus/window;
                             }
-
-
-
 
                             current = element.getAsk();
                             if(current>first){
@@ -113,59 +108,31 @@ public class InstrumentThread extends Thread{
                             if (window==14){
                                 firstRs = plus/minus ;
                                 rsi = 100- 100/(1+firstRs);
-
-//                                System.out.println("-----RSI: "+ rsi);
-//                                if(rsi < 20){
-//                                    //buy
-//                                }
-
+                                System.out.println("-----14th RSI: "+ rsi);
                             }
                             if (window>14){
-
-
                                 top = avgplus*(window-1)+currentgain;
                                 down = avgminus*(window-1)+currentloss;
 
                                 smoothRs = top/down;
-                                nextRsi = 100-100/(1+smoothRs);
+                                nextRsi = 100-(100/(1+smoothRs));
 
                                 System.out.println("-----RSI: "+ nextRsi);
-//                                if(nextRsi<40){
-//                                    //buy
-//
-//                                    if (counter == false) {
-//                                        String result = orderService("buy");
-//                                        if(result.equalsIgnoreCase("yes")){
-//                                            System.out.println("Buyyyyyyyyy");
-//                                            counter=true;
-//                                            price = element.getAsk();
-//                                            System.out.println("Successful---------");
-//                                            break;
-//                                        }
-//                                    }
-//
-//                                }
-
                             }
                         }
 
-
-
-
-
-
-
+                        //moving average
                         if (q.size() == 7) {
                             q.remove();
                         }
                         q.add(element.getAsk());
-                        System.out.println("Small Pool buy: " + q.size());
+                        System.out.println("Small Pool BUY Size: " + q.size());
 
                         if (q2.size() == 20) {
                             q2.remove();
                         }
                         q2.add(element.getAsk());
-                        System.out.println("Large Pool buy :" + q2.size());
+                        System.out.println("Large Pool BUY Size:" + q2.size());
 
                         if (q.size() == 7 && q2.size() == 20) {
                             Iterator<Double> iter = q.iterator();
@@ -180,56 +147,61 @@ public class InstrumentThread extends Thread{
                                 totalq2 = totalq2 + iter2.next();
                             }
 
-                            System.out.println("Small average buy: " + totalq / q.size());
-                            System.out.println("Large average buy: " + totalq2 / q2.size());
-                            System.out.println(counter);
+                            System.out.println("Small MA BUY: " + totalq / q.size());
+                            System.out.println("Large MA BUY: " + totalq2 / q2.size());
+
 
                             if ((totalq / q.size()) > (totalq2 / q2.size())) {
-                                if(nextRsi<50) {
-                                    //buy
-                                    //if (counter == false) {
-                                        int result = datas.orderService("buy");
-                                        if (result != 0) {
-                                            System.out.println("Buyyyyyyyyy");
-                                            //counter = true;
-                                            //price = element.getAsk();
-                                            price = price+result;
+                                if(nextRsi<lowris) {
+                                    if(limitmoney>500) {
+                                        //buy decision made
+                                        Order result = datas.orderService("buy", symbol, "market", 500);
+                                        if (result.getQty() != 0) {
+                                            System.out.println("Bought Bought Bought Bought Bought");
+
+                                            //calculate total price
+                                            List<Fill> fills = result.getFills();
+
+                                            for (Fill child : fills) {
+                                                double thisfillprice;
+                                                thisfillprice = child.getPrice() * child.getQty();
+                                                totalprice += thisfillprice;
+                                            }
+                                            limitmoney -= totalprice;
+                                            System.out.println("You have bought $$$:" + totalprice);
+                                            System.out.println("You left $$$:" + limitmoney);
+
+
+                                            price = price + result.getQty();
                                             System.out.println("Successful---------");
                                             break;
                                         }
-                                    //}
+                                    }
+                                    else{
+                                        System.out.println("You have reached the limit.");
+                                    }
                                 }
                             }
                         }
-
-
-
                     }
 
-//                    if (counter == true && element.getBid()>price) {
-//                    if (counter == true && element.getBid()>price) {
-//                        double result = datas.orderService("sell");
-//                        if(result!=0.0){
-//                            System.out.println("Sellllllll");
-//                            counter=false;
-//                            System.out.println("Successful---------");
-//                        }
-//                    }
 
 
                     //sell
                     if(element.getBid()!=0) {
+
+                            //moving average
 							if (sellq.size() == 7) {
 								sellq.remove();
 							}
 							sellq.add(element.getBid());
-							System.out.println("Small Pool ask: " + sellq.size());
+							System.out.println("Small Pool SELL Size: " + sellq.size());
 
 							if (sellq2.size() == 20) {
 								sellq2.remove();
 							}
 							sellq2.add(element.getBid());
-							System.out.println("Large Pool aks: " + sellq2.size());
+							System.out.println("Large Pool SELL Size: " + sellq2.size());
 
 							if (sellq.size() == 7 && sellq2.size() == 20) {
 								Iterator<Double> iter3 = sellq.iterator();
@@ -244,24 +216,20 @@ public class InstrumentThread extends Thread{
 									totalsellq2 = totalsellq2 + iter4.next();
 								}
 
-								System.out.println("Small average ask: " + totalsellq / sellq.size());
-								System.out.println("Large average aks: " + totalsellq2 / sellq2.size());
-								System.out.println(counter);
+								System.out.println("Small MA SELL: " + totalsellq / sellq.size());
+								System.out.println("Large MA SELL: " + totalsellq2 / sellq2.size());
 
 								if ((totalsellq / sellq.size()) < (totalsellq2 / sellq2.size())) {
-								    if(nextRsi>55) {
-                                        //sell
-                                        //if (counter == true && element.getBid() > price) {
+								    if(nextRsi>highris) {
                                         if(price!=0) {
-                                            int result = datas.orderService("sell");
-                                            if (result != 0) {
-                                                System.out.println("Sellllllll");
-                                                //counter = false;
-                                                price = price-result;
+                                            //sell decision made
+                                            Order result = datas.orderService("buy", symbol, "market", 500);
+                                            if (result.getQty() != 0) {
+                                                System.out.println("Sold Sold Sold Sold Sold");
+                                                price = price-result.getQty();
                                                 System.out.println("Successful---------");
                                             }
                                         }
-                                        //}
                                     }
 								}
 							}
